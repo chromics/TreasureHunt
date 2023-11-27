@@ -5,21 +5,23 @@ public class Player {
     private int steps;
     private Position position;
     private Map map;
-    private int idCount = 1;
+    private static int idCount = 1;
+    private int maxStep;
 
     public Player(Map map, Position initialPosition) {
         this.map = map;
         this.position = initialPosition;
-        this.id = this.idCount;
-        this.idCount++;
+        this.id = idCount++;
+        this.steps = 0;
+        this.maxStep = 9999999;
     }
 
     public Player(Map map, Position initialPosition, int maxStepAllowed) {
         this.map = map;
         this.position = initialPosition;
-        this.steps = maxStepAllowed;
-        this.id = this.idCount;
-        this.idCount++;
+        this.maxStep = maxStepAllowed;
+        this.id = idCount++;
+        this.steps = 0;
     }
 
     // GETTER
@@ -38,82 +40,196 @@ public class Player {
 
     // METHODS
     public boolean move(Direction direction, int steps) {
-
         // CONDITIONS FOR FALSE
         if (map.isActive() == false) {
             return false;
         }
-        if (position.getRow() > map.getRows() - 1 || position.getRow() < 0) {
-            return false;
-        }
-        if (position.getCol() > map.getCols() - 1 || position.getCol() < 0) {
-            return false;
-        }
-        if (this.steps <= 0) {
+        if (this.steps >= this.maxStep) {
             return false;
         }
 
-        // MOVE WITH RESTRICTION
-        // right
+        // MOVE WITH RESTRICTION - hitWall
         int excessSteps;
-        if (direction == Direction.RIGHT && steps + position.getRow() > map.getRows() - 1) {
-            excessSteps = steps + position.getRow() - map.getRows();
-            if (excessSteps > 0) {
-                position.setRow(position.getRow() + excessSteps);
-                this.steps -= excessSteps;
+        int score;
+        // down
+        if (direction == Direction.DOWN && (steps + position.getRow() >= this.map.getRows() || this.steps + steps > this.maxStep)){
+            
+            excessSteps = this.map.getRows() - position.getRow() - 1;
+
+            if ((this.steps + steps) > this.maxStep && (this.maxStep - this.steps) < excessSteps) {
+                excessSteps = this.maxStep - this.steps;
             }
+            for(; excessSteps > 0; excessSteps--) {
+                position.setRow(position.getRow() + 1);
+                this.steps++;
+                score = this.map.hasTreasure(position);
+
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+            return false;
+        }
+        
+        // up
+        if (direction == Direction.UP && (position.getRow() - steps < 0 || this.steps + steps > this.maxStep)) {
+            
+            excessSteps = position.getRow();
+
+            if ((this.steps + steps) > this.maxStep && (this.maxStep - this.steps) < excessSteps) {
+                excessSteps = this.maxStep - this.steps;
+            }
+
+            for(; excessSteps > 0; excessSteps--) {
+                position.setRow(position.getRow() - 1);
+                this.steps++;
+                score = this.map.hasTreasure(position);
+
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+            return false;
+        }
+        // right
+        if (direction == Direction.RIGHT && (steps + position.getCol() >= this.map.getCols() || this.steps + steps > this.maxStep)) {
+            
+            excessSteps = this.map.getCols() - position.getCol() - 1;
+            if((this.steps + steps) > this.maxStep && (this.maxStep - this.steps) < excessSteps){
+                excessSteps = this.maxStep - this.steps;
+            }
+
+            for(; excessSteps > 0; excessSteps--) {
+                position.setCol(position.getCol() + 1);
+                this.steps++;
+                score = this.map.hasTreasure(position);
+
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+            
+            return false;
         }
         // left
-        if (direction == Direction.LEFT && position.getRow() - steps < 0) {
-            excessSteps = position.getRow();
-            if (excessSteps > 0) {
-                position.setRow(position.getRow() - excessSteps);
-                this.steps -= excessSteps;
-            }
-        }
-        // down
-        if (direction == Direction.DOWN && steps + position.getCol() > map.getCols() - 1) {
-            excessSteps = steps + position.getCol() - map.getCols();
-            if (excessSteps > 0) {
-                position.setCol(position.getCol() + excessSteps);
-                this.steps += excessSteps;
-            }
-        }
-        // up
-        if (direction == Direction.UP && position.getCol() - steps < 0) {
+        if (direction == Direction.LEFT && (position.getCol() - steps < 0 || this.steps + steps > this.maxStep)) {
+            
             excessSteps = position.getCol();
-            if (excessSteps > 0) {
-                position.setCol(position.getCol() - excessSteps);
-                this.steps += excessSteps;
+
+            if((this.steps + steps) > this.maxStep && (this.maxStep - this.steps) < excessSteps){
+                excessSteps = this.maxStep - this.steps;
             }
+
+            for(; excessSteps > 0; excessSteps--) {
+                position.setCol(position.getCol() - 1);
+                this.steps++;
+                score = this.map.hasTreasure(position);
+
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+            return false;
         }
 
         // MOVE WITHOUT RESTRICTION
-        if (direction == Direction.UP && position.getCol() - steps >= 0) {
-            position.setCol(position.getCol() + steps);
-            this.steps += steps;
-        }
-        if (direction == Direction.DOWN && steps + position.getCol() <= map.getCols() - 1) {
-            position.setCol(position.getCol() - steps);
-            this.steps -= steps;
-        }
-        if (direction == Direction.LEFT && position.getRow() - steps >= 0) {
-            position.setRow(position.getRow() - steps);
-            this.steps -= steps;
-        }
-        if (direction == Direction.RIGHT && steps + position.getRow() <= map.getRows() - 1) {
-            position.setRow(position.getRow() + steps);
-            this.steps += steps;
-        }
+        if (direction == Direction.LEFT) {
+            for (; steps > 0; steps--) {
+                position.setCol(position.getCol() - 1);
+                this.steps ++;
+                
+                score = this.map.hasTreasure(position);
 
-        map.update(position);
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+        }
+        if (direction == Direction.RIGHT) {
+            for (; steps > 0; steps--) {
+                position.setCol(position.getCol() + 1);
+                this.steps ++;
+                
+                score = this.map.hasTreasure(position);
+
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+        }
+        if (direction == Direction.UP) {
+            for (; steps > 0; steps--) {
+                position.setRow(position.getRow() - 1);
+                this.steps ++;
+                
+                score = this.map.hasTreasure(position);
+
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+        }
+        if (direction == Direction.DOWN) {
+            for (; steps > 0; steps--) {
+                position.setRow(position.getRow() + 1);
+                this.steps ++;
+                
+                score = this.map.hasTreasure(position);
+
+                if(score > 0){
+                    this.map.update(position);
+                }
+                this.score += score;
+
+                if(!this.map.isActive() && steps > 1){
+                    return false;
+                }
+            }
+
+        }
 
         return true;
 
     }
 
-    public boolean equals(Player player) {
-        if (player.id == this.id) {
+    public boolean equals(Object player) {
+        Player p = (Player)player;
+        if (p.id == this.id) {
             return true;
         }
         return false;

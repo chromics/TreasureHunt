@@ -25,8 +25,9 @@ public class Position {
     }
 
     // METHODS
-    public boolean equals(Position position) {
-        if (this.row == position.row && this.col == position.col) {
+    public boolean equals(Object position) {
+        Position p = (Position)position;
+        if (this.row == p.row && this.col == p.col) {
             return true;
         }
         return false;
